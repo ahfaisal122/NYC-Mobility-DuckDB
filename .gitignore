@@ -1,0 +1,7 @@
+.venv/
+data/raw/
+data/processed/
+*.duckdb
+*.duckdb.tmp/
+__pycache__/
+sql.py
