@@ -1,6 +1,6 @@
 .venv/
 data/raw/
-data/processed/
+data/weather/
 *.duckdb
 *.duckdb.tmp/
 __pycache__/
