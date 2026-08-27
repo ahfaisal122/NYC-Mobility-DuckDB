@@ -131,11 +131,21 @@ row2_left, row2_right = st.columns(2)
 
 with row2_left:
     st.subheader("Daily Mobility & Demand Trends")
+    
+    # 1. Filter out erroneous outlier years (keep only 2021 to 2025)
+    trend_data = filtered_df[
+        (pd.to_datetime(filtered_df["trip_date"]) >= "2021-01-01") & 
+        (pd.to_datetime(filtered_df["trip_date"]) <= "2025-12-31")
+    ]
+    
+    # 2. Aggregate daily trips
     daily_trend = (
-        filtered_df.groupby(["trip_date", "weather_condition"])["total_trips"]
+        trend_data.groupby(["trip_date", "weather_condition"])["total_trips"]
         .sum()
         .reset_index()
     )
+    
+    # 3. Build line chart
     fig_line = px.line(
         daily_trend,
         x="trip_date",
@@ -143,7 +153,12 @@ with row2_left:
         color="weather_condition",
         labels={"trip_date": "Date", "total_trips": "Completed Rides", "weather_condition": "Weather"}
     )
-    fig_line.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    
+    # 4. Set explicit X-axis display bounds and horizontal legend
+    fig_line.update_layout(
+        xaxis_range=["2021-01-01", "2025-12-31"],
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
     st.plotly_chart(fig_line, use_container_width=True)
 
 with row2_right:
