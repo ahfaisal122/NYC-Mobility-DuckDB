@@ -1,7 +1,6 @@
 # 🚖 NYC Mobility & Weather Intelligence Engine
-*Local-First Analytics Pipeline Processing 100M+ Taxi Records on an 8 GB M1 MacBook Pro*
+*Local-First Analytics Pipeline Processing 78M Taxi Records on an 8 GB M1 MacBook Pro*
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR_APP_SUBDOMAIN.streamlit.app)
 ![DuckDB](https://img.shields.io/badge/Engine-DuckDB-FFF000?style=flat-square&logo=duckdb)
 ![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-FF4B4B?style=flat-square&logo=streamlit)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)
@@ -10,7 +9,7 @@
 ---
 
 ## 📌 Executive Summary
-Cloud data warehouses (Snowflake, BigQuery) are often treated as default requirements for processing multi-gigabyte datasets. This project demonstrates a **local-first analytics architecture** capable of joining, cleaning, and aggregating over **100 million NYC Yellow Taxi trip records (~18 GB uncompressed)** against historical hourly weather data on an entry-level **8 GB M1 Mac** with sub-4-second analytical execution and zero cloud infrastructure costs.
+Cloud data warehouses (Snowflake, BigQuery) are often treated as default requirements for processing multi-gigabyte datasets. This project demonstrates a **local-first analytics architecture** capable of joining, cleaning, and aggregating **78 million NYC Yellow Taxi trip records (24 monthly Parquet files, 2022–2023, ~1.25 GB on disk)** against historical hourly weather data on an entry-level **8 GB M1 Mac** with sub-4-second analytical execution and zero cloud infrastructure costs.
 
 ---
 
@@ -18,9 +17,9 @@ Cloud data warehouses (Snowflake, BigQuery) are often treated as default require
 
 | Metric | Traditional Pandas Workflow | DuckDB Local-First Engine |
 | :--- | :--- | :--- |
-| **Input Scale** | 24 Monthly Parquet Files (~18 GB uncompressed) | 24 Monthly Parquet Files (~18 GB uncompressed) |
-| **Peak Memory Footprint** | 💥 **Crashed (OOM > 8 GB)** | 🟢 **1.2 GB – 2.4 GB Peak** |
-| **Execution Time** | Failed (Kernel Killed by OS) | 🟢 **~3.08 seconds** |
+| **Input Scale** | 24 Monthly Parquet Files (78M rows, ~1.25 GB on disk) | 24 Monthly Parquet Files (78M rows, ~1.25 GB on disk) |
+| **Peak Memory Footprint** | 💥 **Crashed (OOM > 8 GB)** | 🟢 **~0.9 GB Peak** |
+| **Execution Time** | Failed (Kernel Killed by OS) | 🟢 **~3.7 seconds** |
 | **Out-of-Core Processing** | ❌ None (Requires memory > file size) | 🟢 Automatic Vectorized Streaming |
 | **Compute Cost** | Cloud Server / Spark Instance ($$) | **$0.00 (Local Hardware)** |
 
@@ -28,9 +27,11 @@ Cloud data warehouses (Snowflake, BigQuery) are often treated as default require
 
 ## 🔍 Key Analytical & Business Insights
 
-* **Precipitation Elasticity:** During heavy rain events (>5mm/hr), city-wide completed taxi volume drops by **14.2%** due to traffic gridlock, while airport corridors (JFK/LGA) maintain steady demand with a **22% surge** in fare totals.
-* **Transit Speed & Congestion Slowdown:** Average vehicle transit speed drops from **11.8 mph to 8.4 mph** during severe downpours, increasing the average trip duration by **31.8%**.
-* **Tipping Behavior:** Passengers tip an average of **1.8% to 2.4% higher** on credit card transactions during bad weather, partially offsetting driver revenue losses from lower trip velocity.
+Figures cover the 59.2 million trips that pass the cleaning rules below (credit card trips, 2022–2023). "Heavy rain" means more than 5 mm of precipitation in the pickup hour, which occurred in 102 of the 17,520 hours in the period.
+
+* **Demand Dips Modestly in Rain:** Heavy-rain hours see about **7.5% fewer trips** than dry hours on the same weekday and hour of day; light rain (0.5–5 mm/hr) about **1.9% fewer**. Airport pickups (JFK/LGA) fall by a similar **~9%**, with the average airport trip total essentially unchanged ($70.56 dry vs. $69.39 heavy rain).
+* **Transit Speed Barely Moves:** Average speed slips from **13.4 mph to 12.9 mph** in heavy rain, while average trip duration stays flat at about **16.1 minutes**.
+* **Tipping Is Weather-Insensitive:** The weighted credit card tip rate is **22.75%** in dry hours and **22.66%** in heavy rain.
 
 ---
 
@@ -68,6 +69,7 @@ The application reads the pre-aggregated summary Parquet file to render a full-f
 ## 🏗️ Architecture & Data Flow
 
 ```text
-NYC TLC (Parquet) [~18 GB] ──┐
+NYC TLC (Parquet) [~1.25 GB]─┐
                              ├─► DuckDB Vectorized SQL Engine ──► Processed Summary ──► Streamlit BI App
-Open-Meteo Weather [CSV]    ──┘    (Filtered, Cleaned, Joined)        (Parquet, ~2 MB)
+Open-Meteo Weather [CSV]    ──┘    (Filtered, Cleaned, Joined)        (Parquet, ~3 MB)
+```

@@ -27,6 +27,7 @@ for year in years:
                 print(f"Failed to download: {url}")
 
 # 2. Download NYC Hourly Weather (Open-Meteo Archive API)
+# Requested explicitly in GMT; scripts/pipeline.py converts it to New York local time.
 weather_file = "data/weather/nyc_hourly_weather.csv"
 if not os.path.exists(weather_file):
     print(" == Downloading NYC Historical Weather Data == ")
@@ -35,6 +36,7 @@ if not os.path.exists(weather_file):
         "latitude=40.7128&longitude=-74.0060&"
         "start_date=2022-01-01&end_date=2023-12-31&"
         "hourly=temperature_2m,precipitation,windspeed_10m&"
+        "timezone=GMT&"
         "format=csv"
     )
     res = requests.get(weather_url)

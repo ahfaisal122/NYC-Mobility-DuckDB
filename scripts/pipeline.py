@@ -8,18 +8,23 @@ con = duckdb.connect(database="mobility.duckdb")
 con.execute("SET memory_limit = '4GB';")
 con.execute("SET threads TO 6;")
 
-print("Executing SQL transformation over ~18 GB of data...")
+print("Executing SQL transformation over 24 monthly Parquet files (~78M raw trips)...")
 start_time = time.time()
 
 # 1. Parse weather data
+# The weather file is in GMT, while TLC pickup times are New York local time.
+# Convert weather to local time (DST-aware) so both sides of the join agree.
+# The autumn DST change maps two GMT hours onto one local hour, so collapse to
+# one row per local hour to keep the join from duplicating trips.
 con.execute("""
     CREATE OR REPLACE TABLE weather AS 
     SELECT 
-        "time"::TIMESTAMP AS weather_time,
-        "temperature_2m (°C)" AS temp_c,
-        "precipitation (mm)" AS rain_mm,
-        "windspeed_10m (km/h)" AS wind_speed
-    FROM read_csv_auto('data/weather/nyc_hourly_weather.csv', skip=3);
+        ("time"::TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'America/New_York' AS weather_time,
+        AVG("temperature_2m (°C)") AS temp_c,
+        MAX("precipitation (mm)") AS rain_mm,
+        AVG("windspeed_10m (km/h)") AS wind_speed
+    FROM read_csv_auto('data/weather/nyc_hourly_weather.csv', skip=3)
+    GROUP BY 1;
 """)
 
 # 2. Process taxi trips applying the 5 data-cleaning & weighting rules
@@ -38,7 +43,9 @@ con.execute("""
             payment_type,
             date_diff('minute', tpep_pickup_datetime, tpep_dropoff_datetime) AS trip_duration_min
         FROM read_parquet('data/raw/*.parquet')
-        WHERE trip_distance > 0 
+        WHERE tpep_pickup_datetime >= TIMESTAMP '2022-01-01'   -- Exclude mis-dated records
+          AND tpep_pickup_datetime <  TIMESTAMP '2024-01-01'   -- outside the 2022-2023 files
+          AND trip_distance > 0 
           AND fare_amount >= 2.50              -- Rule 2: Exclude corrupt & sub-minimum fares
           AND tip_amount >= 0                  -- Rule 2: Exclude negative chargebacks
           AND tip_amount <= fare_amount * 1.5  -- Rule 3: Cap input/terminal typos

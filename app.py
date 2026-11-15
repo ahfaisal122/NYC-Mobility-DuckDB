@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 st.title("🚖 NYC Mobility & Weather Intelligence Dashboard")
-st.caption("Out-of-Core Local Analytics over 100M+ rides powered by DuckDB & Streamlit")
+st.caption("Out-of-Core Local Analytics over 78M rides powered by DuckDB & Streamlit")
 
 # Ingestion via DuckDB with caching
 con = duckdb.connect()
@@ -66,10 +66,15 @@ def format_currency(val):
 # --- KPI Calculations ---
 total_trips = filtered_df["total_trips"].sum()
 total_revenue = filtered_df["total_revenue"].sum()
-avg_fare = filtered_df["avg_fare"].mean()
-avg_distance = filtered_df["avg_distance"].mean()
-avg_duration = filtered_df["avg_duration_min"].mean()
-avg_tip = filtered_df["avg_tip_pct"].mean()
+
+# Each row is a (zone, day, weather) group average; weight by trip count for per-trip figures.
+trips = filtered_df["total_trips"]
+fare_sum = (filtered_df["avg_fare"] * trips).sum()
+avg_fare = fare_sum / total_trips
+avg_distance = (filtered_df["avg_distance"] * trips).sum() / total_trips
+avg_duration = (filtered_df["avg_duration_min"] * trips).sum() / total_trips
+# avg_tip_pct is a ratio of sums (tips / fares), so weight it by fare dollars.
+avg_tip = (filtered_df["avg_tip_pct"] * filtered_df["avg_fare"] * trips).sum() / fare_sum
 
 # Derived operational rates
 avg_speed_mph = (avg_distance / (avg_duration / 60)) if avg_duration > 0 else 0
@@ -132,20 +137,14 @@ row2_left, row2_right = st.columns(2)
 with row2_left:
     st.subheader("Daily Mobility & Demand Trends")
     
-    # 1. Filter out erroneous outlier years (keep only 2021 to 2025)
-    trend_data = filtered_df[
-        (pd.to_datetime(filtered_df["trip_date"]) >= "2021-01-01") & 
-        (pd.to_datetime(filtered_df["trip_date"]) <= "2025-12-31")
-    ]
-    
-    # 2. Aggregate daily trips
+    # 1. Aggregate daily trips
     daily_trend = (
-        trend_data.groupby(["trip_date", "weather_condition"])["total_trips"]
+        filtered_df.groupby(["trip_date", "weather_condition"])["total_trips"]
         .sum()
         .reset_index()
     )
     
-    # 3. Build line chart
+    # 2. Build line chart
     fig_line = px.line(
         daily_trend,
         x="trip_date",
@@ -154,9 +153,8 @@ with row2_left:
         labels={"trip_date": "Date", "total_trips": "Completed Rides", "weather_condition": "Weather"}
     )
     
-    # 4. Set explicit X-axis display bounds and horizontal legend
+    # 3. Horizontal legend
     fig_line.update_layout(
-        xaxis_range=["2021-01-01", "2025-12-31"],
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig_line, use_container_width=True)
@@ -188,4 +186,7 @@ with row2_right:
         yaxis={"type": "category", "categoryorder": "total ascending"},
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
+  
+
+
     st.plotly_chart(fig_bar, use_container_width=True)
