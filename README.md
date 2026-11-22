@@ -6,11 +6,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)
 ![Hardware](https://img.shields.io/badge/Hardware-Apple%20M1%208GB%20RAM-lightgrey?style=flat-square)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.png">
-  <img alt="NYC Mobility & Weather Intelligence dashboard showing KPI cards and four weather-impact charts" src="docs/screenshots/dashboard-light.png">
-</picture>
-
 ---
 
 ## 📌 Executive Summary
