@@ -6,6 +6,11 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)
 ![Hardware](https://img.shields.io/badge/Hardware-Apple%20M1%208GB%20RAM-lightgrey?style=flat-square)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.png">
+  <img alt="NYC Mobility & Weather Intelligence dashboard showing KPI cards and four weather-impact charts" src="docs/screenshots/dashboard-light.png">
+</picture>
+
 ---
 
 ## 📌 Executive Summary
@@ -58,11 +63,17 @@ The application reads the pre-aggregated summary Parquet file to render a full-f
 * **Volume & Revenue:** Total Completed Trips, Gross Revenue, Average Fare ($), Average Trip Distance (mi).
 * **Operational Pace & Behavior:** Average Trip Duration (min), Average Speed (mph), Revenue Rate ($/min), Average Tip (%).
 
+![KPI scorecard with weather filter and eight metric cards](docs/screenshots/kpi-scorecard.png)
+
 ### 2. Analytical Visualizations
 * **Trip Duration Distribution:** Overlaid histograms and marginal box plots showing duration shifts across clear, light rain, and heavy rain conditions.
 * **Tip Percentage vs. Average Fare:** Multi-variable scatter plot examining tipping elasticity and fare distributions.
 * **Daily Mobility & Demand Trends:** Multi-line time series tracking daily completed rides over multi-year periods.
 * **Top 10 Pickup Hubs:** Grouped horizontal bar charts comparing weather resilience across major transit zones.
+
+![Trip duration distribution, tip vs. fare scatter, daily demand trend, and top 10 pickup hubs charts](docs/screenshots/weather-charts.png)
+
+The dashboard follows the viewer's light or dark theme.
 
 ---
 
